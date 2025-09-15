@@ -1,0 +1,465 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.604171,
+          47.220837
+        ]
+      },
+      "properties": {
+        "name": "Krankenhaus Maria Ebene",
+        "street": "Maria Ebene",
+        "housenumber": "17",
+        "postcode": "6820",
+        "city": "Frastanz",
+        "phone": "+43 5522 727460",
+        "website": "https://krankenhaus.mariaebene.at",
+        "operator": "Stiftung Maria Ebene",
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.398415,
+          48.195579
+        ]
+      },
+      "properties": {
+        "name": "Herz-Jesu-Krankenhaus",
+        "street": "Baumgasse",
+        "housenumber": "20A",
+        "postcode": "1030",
+        "city": "Wien",
+        "phone": "+43 (0)1 / 712 26 84-0",
+        "website": "https://www.kh-herzjesu.at/",
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.386057,
+          48.205087
+        ]
+      },
+      "properties": {
+        "name": "Franziskus Spital Landstraße",
+        "street": "Landstraßer Hauptstraße",
+        "housenumber": "4a",
+        "postcode": "1030",
+        "city": "Wien",
+        "phone": "+43 1 71126-0",
+        "website": "https://www.franziskusspital.com",
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.345471,
+          48.19235
+        ]
+      },
+      "properties": {
+        "name": "Krankenhaus der Barmherzigen Schwestern",
+        "street": "Stumpergasse",
+        "housenumber": "13",
+        "postcode": "1060",
+        "city": "Wien",
+        "phone": null,
+        "website": null,
+        "operator": "Vinzenz Gruppe",
+        "emergency": "no",
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.922456,
+          47.838451
+        ]
+      },
+      "properties": {
+        "name": "Krankenhaus der Barmherzigen Brüder",
+        "street": "Mühlteich",
+        "housenumber": "4",
+        "postcode": "7132",
+        "city": "Frauenkirchen",
+        "phone": "+43 2682 6014350",
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.98874,
+          46.6995
+        ]
+      },
+      "properties": {
+        "name": "Landeskrankenhaus Laas",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          14.760535,
+          47.425048
+        ]
+      },
+      "properties": {
+        "name": "Unfallkrankenhaus Steiermark, Standort Kalwang",
+        "street": "Rudolf-von-Gutmann-Straße",
+        "housenumber": "1",
+        "postcode": "8775",
+        "city": "Kalwang",
+        "phone": null,
+        "website": "https://www.ukh-steiermark.at/",
+        "operator": "Allgemeine Unfallversicherungsanstalt",
+        "emergency": "yes",
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.467128,
+          47.385404
+        ]
+      },
+      "properties": {
+        "name": "Unknown hospital",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.740213,
+          47.406297
+        ]
+      },
+      "properties": {
+        "name": "Krankenhaus Dornbirn",
+        "street": "Lustenauerstraße",
+        "housenumber": "4",
+        "postcode": "6850",
+        "city": "Dornbirn",
+        "phone": "+43 5572 303 0",
+        "website": "http://krankenhaus.dornbirn.at/",
+        "operator": "Stadt Dornbirn",
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.76373,
+          47.274231
+        ]
+      },
+      "properties": {
+        "name": "Ambulatorium Optimed Sportmedizin",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": "yes",
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.395523,
+          47.052044
+        ]
+      },
+      "properties": {
+        "name": "Militärspital",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.73124,
+          47.651342
+        ]
+      },
+      "properties": {
+        "name": "Unknown hospital",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.560243,
+          48.121695
+        ]
+      },
+      "properties": {
+        "name": "Medizinische Ambulanz",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": "+431700722245",
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.67654,
+          47.391939
+        ]
+      },
+      "properties": {
+        "name": "Diakonissenkrankenhaus Schladming",
+        "street": "Salzburger Straße",
+        "housenumber": "777",
+        "postcode": "8970",
+        "city": "Schladming",
+        "phone": null,
+        "website": null,
+        "operator": "Diakonie",
+        "emergency": "yes",
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.285211,
+          48.812608
+        ]
+      },
+      "properties": {
+        "name": "Landesklinikum Waidhofen/Thaya",
+        "street": "Moritz Schadekgasse",
+        "housenumber": "31",
+        "postcode": "3830",
+        "city": "Waidhofen an der Thaya",
+        "phone": null,
+        "website": null,
+        "operator": "NÖ Landesgesundheitsagentur",
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.032579,
+          47.80626
+        ]
+      },
+      "properties": {
+        "name": "PMU LKH Gynäkologie Geburtshilfe",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": "https://salk.at/",
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.548032,
+          48.599415
+        ]
+      },
+      "properties": {
+        "name": "Gesundheitszentrum",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.970184,
+          47.280282
+        ]
+      },
+      "properties": {
+        "name": "Psychotherapie Hartberg",
+        "street": "Michaeligasse",
+        "housenumber": "22",
+        "postcode": "8230",
+        "city": "Hartberg",
+        "phone": null,
+        "website": null,
+        "operator": "Mag.(FH) Philipp Schwab, MSc.",
+        "emergency": "no",
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.064931,
+          48.321908
+        ]
+      },
+      "properties": {
+        "name": "Universitätsklinikum Tulln",
+        "street": "Alter Ziegelweg",
+        "housenumber": "10",
+        "postcode": "3430",
+        "city": "Tulln an der Donau",
+        "phone": null,
+        "website": null,
+        "operator": "NÖ Landesgesundheitsagentur",
+        "emergency": null,
+        "capacity": null,
+        "source": "OSM"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.028321,
+          47.806075
+        ]
+      },
+      "properties": {
+        "name": "Notaufnahme Erwachsene",
+        "street": null,
+        "housenumber": null,
+        "postcode": null,
+        "city": null,
+        "phone": null,
+        "website": null,
+        "operator": null,
+        "emergency": "yes",
+        "capacity": null,
+        "source": "OSM"
+      }
+    }
+  ]
+}
