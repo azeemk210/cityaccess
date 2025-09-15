@@ -88,6 +88,24 @@ export default function App() {
 
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
+      {/* Hospital counter (top-left) */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          zIndex: 1000,
+          background: "white",
+          padding: "6px 10px",
+          borderRadius: 6,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          fontSize: "14px",
+          fontWeight: "bold",
+        }}
+      >
+        🏥 Hospitals Loaded: {allHospitals.length}
+      </div>
+
       <MapContainer center={[48.21, 16.37]} zoom={12} style={{ height: "100%", width: "100%" }}>
         <LayersControl position="topright">
           <BaseLayer checked name="OpenStreetMap">
