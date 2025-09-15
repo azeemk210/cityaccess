@@ -22,6 +22,11 @@ interface Hospital {
   type?: string;
   capacity?: number;
   distance_m?: number;
+  postcode?: string;
+  operator?: string;
+  emergency?: string;
+  phone?: string;
+  website?: string;
 }
 
 const hospitalIcon = L.icon({
@@ -51,19 +56,22 @@ export default function App() {
   const [circleCenter, setCircleCenter] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(2000);
 
+  // 👇 Pick API URL dynamically
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
   useEffect(() => {
-    fetch("http://localhost:8000/hospitals")
+    fetch(`${API_URL}/hospitals`)
       .then((res) => res.json())
       .then(setAllHospitals)
       .catch((err) => console.error("Error fetching hospitals:", err));
-  }, []);
+  }, [API_URL]);
 
   const handleMapClick = async (lat: number, lng: number) => {
     setCircleCenter([lat, lng]);
 
     try {
       const res = await fetch(
-        `http://localhost:8000/hospitals/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
+        `${API_URL}/hospitals/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
       );
       const data = await res.json();
       setNearestHospitals(data);
@@ -166,7 +174,6 @@ export default function App() {
                   </button>
                 </div>
               </Popup>
-
             </Marker>
           );
         })}
@@ -181,11 +188,11 @@ export default function App() {
         )}
       </MapContainer>
 
-      {/* ✅ Distance slider moved below LayerControl */}
+      {/* Distance slider */}
       <div
         style={{
           position: "absolute",
-          top: 120, // push it below LayerControl
+          top: 120,
           right: 10,
           zIndex: 1000,
           background: "white",
@@ -210,7 +217,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* Legend (bottom-left) */}
+      {/* Legend */}
       <div
         style={{
           position: "absolute",
