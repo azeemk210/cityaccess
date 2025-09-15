@@ -1,22 +1,24 @@
-# Step 1: Use official lightweight Python image
+# Use a lightweight Python image
 FROM python:3.11-slim
 
-# Step 2: Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Step 3: Environment settings
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# Install system dependencies (optional: for psycopg2, asyncpg, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Step 4: Install dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Step 5: Copy app code
-COPY app ./app
+# Copy all app files
+COPY . .
 
-# Step 6: Expose port 8000 (FastAPI)
+# Expose port (Render sets $PORT automatically)
 EXPOSE 8000
 
-# Step 7: Command to run the app
+# Start FastAPI with Uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

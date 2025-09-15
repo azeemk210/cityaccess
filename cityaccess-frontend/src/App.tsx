@@ -112,16 +112,31 @@ export default function App() {
           return (
             <Marker key={i} position={[h.lat, h.lon]} icon={icon}>
               <Popup>
-                <div style={{ minWidth: "200px" }}>
+                <div style={{ minWidth: "220px" }}>
                   <b style={{ fontSize: "16px", color: isNearest ? "blue" : "black" }}>
                     {h.name}
                   </b>
                   <br />
-                  📍 {h.address || "No address"}, {h.city || "Unknown"}
+                  📍 {h.address || "No address"} {h.postcode ? `(${h.postcode})` : ""}
                   <br />
-                  🏥 Type: {h.type || "N/A"}
+                  🏙️ {h.city || "Unknown City"}
                   <br />
-                  👥 Capacity: {h.capacity ? h.capacity + " beds" : "N/A"}
+                  🏥 Operator: {h.operator || "N/A"}
+                  <br />
+                  🚑 Emergency: {h.emergency === "yes" ? "✅ Yes" : h.emergency === "no" ? "❌ No" : "Unknown"}
+                  <br />
+                  👥 Capacity: {h.capacity ? `${h.capacity} beds` : "N/A"}
+                  <br />
+                  ☎️ {h.phone || "N/A"}
+                  <br />
+                  🌐{" "}
+                  {h.website ? (
+                    <a href={h.website} target="_blank" rel="noreferrer">
+                      Visit Website
+                    </a>
+                  ) : (
+                    "N/A"
+                  )}
                   <br />
                   Lat: {h.lat.toFixed(4)}, Lon: {h.lon.toFixed(4)}
                   {h.distance_m && (
@@ -151,6 +166,7 @@ export default function App() {
                   </button>
                 </div>
               </Popup>
+
             </Marker>
           );
         })}

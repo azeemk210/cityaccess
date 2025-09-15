@@ -3,14 +3,28 @@ import os
 import asyncpg
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+import ssl
+from dotenv import load_dotenv
+from typing import Optional
 
+
+# 🔹 Load .env file
+load_dotenv()
+
+# 🔹 Database config from Supabase
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_NAME = os.getenv("DB_NAME", "cityaccess")
-DB_HOST = os.getenv("DB_HOST", "db")  # docker-compose service name
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "postgres")
+DB_HOST = os.getenv("DB_HOST", "")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
 
-pool: asyncpg.Pool | None = None
+pool: Optional[asyncpg.Pool] = None
+
+# 🔹 Create SSL context for Supabase
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+# (Alternative: use Supabase CA cert if you want stricter validation)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,9 +35,10 @@ async def lifespan(app: FastAPI):
         database=DB_NAME,
         host=DB_HOST,
         port=DB_PORT,
+        ssl=ssl_context,
         min_size=1,
         max_size=10,
-        command_timeout=60
+        command_timeout=60,
     )
     try:
         yield
@@ -31,15 +46,21 @@ async def lifespan(app: FastAPI):
         if pool:
             await pool.close()
 
+# ✅ FastAPI app
 app = FastAPI(title="CityAccess API", lifespan=lifespan)
 
+# ✅ CORS (React frontend at :5173)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # for dev; later restrict to ["http://localhost:5173"]
+    allow_origins=["*"],  # or ["http://localhost:5173"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+def root():
+    return {"message": "CityAccess API is running 🚀"}
 
 @app.get("/health")
 async def health():
@@ -51,18 +72,9 @@ async def get_all_hospitals():
         assert pool is not None
         async with pool.acquire() as conn:
             rows = await conn.fetch("""
-                SELECT name,
-                       ST_X(geom) AS lon,
-                       ST_Y(geom) AS lat,
-                       address,
-                       city,
-                       postcode,
-                       phone,
-                       website,
-                       operator,
-                       emergency,
-                       capacity,
-                       source
+                SELECT id, name, ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                       address, city, postcode, phone, website, operator,
+                       emergency, capacity
                 FROM hospitals
                 ORDER BY name;
             """)
@@ -76,18 +88,9 @@ async def nearest_hospitals(lon: float, lat: float, dist: int = 2000):
         assert pool is not None
         async with pool.acquire() as conn:
             rows = await conn.fetch("""
-                SELECT name,
-                       ST_X(geom) AS lon,
-                       ST_Y(geom) AS lat,
-                       address,
-                       city,
-                       postcode,
-                       phone,
-                       website,
-                       operator,
-                       emergency,
-                       capacity,
-                       source,
+                SELECT id, name, ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                       address, city, postcode, phone, website, operator,
+                       emergency, capacity,
                        ST_Distance(
                          geom::geography,
                          ST_SetSRID(ST_Point($1,$2),4326)::geography
@@ -104,7 +107,3 @@ async def nearest_hospitals(lon: float, lat: float, dist: int = 2000):
         return [dict(r) for r in rows]
     except Exception as e:
         raise HTTPException(500, f"Error fetching nearest hospitals: {e}")
-
-@app.get("/")
-def root():
-    return {"message": "CityAccess API is running 🚀"}
