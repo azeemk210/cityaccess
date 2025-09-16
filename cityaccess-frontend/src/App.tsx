@@ -13,36 +13,76 @@ import L from "leaflet";
 
 const { BaseLayer } = LayersControl;
 
-interface Hospital {
+interface Facility {
+  id: number;
   name: string;
   lon: number;
   lat: number;
+  facility_type?: string;
   address?: string;
   city?: string;
-  type?: string;
-  capacity?: number;
-  distance_m?: number;
   postcode?: string;
   operator?: string;
   emergency?: string;
+  capacity?: number;
   phone?: string;
   website?: string;
+  distance_m?: number;
 }
 
-const hospitalIcon = L.icon({
-  iconUrl: "/icons/hospital.png",
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -28],
-});
+// 🔹 Icons for each facility type
+const iconMap: Record<string, L.Icon> = {
+  hospital: L.icon({
+    iconUrl: "/icons/hospital.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
+  }),
+  pharmacy: L.icon({
+    iconUrl: "/icons/pharmacy.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  }),
+  clinic: L.icon({
+    iconUrl: "/icons/clinic.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  }),
+  doctor: L.icon({
+    iconUrl: "/icons/doctor.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  }),
+  dentist: L.icon({
+    iconUrl: "/icons/dentist.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  }),
+  laboratory: L.icon({
+    iconUrl: "/icons/laboratory.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  }),
+  nearest: L.icon({
+    iconUrl: "/icons/hospital-blue.png",
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+  default: L.icon({
+    iconUrl: "/icons/facility.png",
+    iconSize: [22, 22],
+    iconAnchor: [11, 22],
+    popupAnchor: [0, -22],
+  }),
+};
 
-const nearestIcon = L.icon({
-  iconUrl: "/icons/hospital-blue.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-});
-
+// 🔹 Handle map clicks
 function LocationClick({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   useMapEvents({
     click: (e) => onClick(e.latlng.lat, e.latlng.lng),
@@ -51,44 +91,44 @@ function LocationClick({ onClick }: { onClick: (lat: number, lng: number) => voi
 }
 
 export default function App() {
-  const [allHospitals, setAllHospitals] = useState<Hospital[]>([]);
-  const [nearestHospitals, setNearestHospitals] = useState<Hospital[]>([]);
+  const [allFacilities, setAllFacilities] = useState<Facility[]>([]);
+  const [nearestFacilities, setNearestFacilities] = useState<Facility[]>([]);
   const [circleCenter, setCircleCenter] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(2000);
 
-  // 👇 Pick API URL dynamically
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+  // Fetch all facilities
   useEffect(() => {
-    fetch(`${API_URL}/hospitals`)
+    fetch(`${API_URL}/facilities`)
       .then((res) => res.json())
-      .then(setAllHospitals)
-      .catch((err) => console.error("Error fetching hospitals:", err));
+      .then(setAllFacilities)
+      .catch((err) => console.error("Error fetching facilities:", err));
   }, [API_URL]);
 
+  // Handle nearest facility fetch
   const handleMapClick = async (lat: number, lng: number) => {
     setCircleCenter([lat, lng]);
-
     try {
       const res = await fetch(
-        `${API_URL}/hospitals/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
+        `${API_URL}/facilities/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
       );
       const data = await res.json();
-      setNearestHospitals(data);
+      setNearestFacilities(data);
     } catch (err) {
-      console.error("Error fetching nearest:", err);
-      setNearestHospitals([]);
+      console.error("Error fetching nearest facilities:", err);
+      setNearestFacilities([]);
     }
   };
 
   const clearSelection = () => {
     setCircleCenter(null);
-    setNearestHospitals([]);
+    setNearestFacilities([]);
   };
 
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
-      {/* Hospital counter (top-left) */}
+      {/* ✅ Facility counter */}
       <div
         style={{
           position: "absolute",
@@ -103,10 +143,15 @@ export default function App() {
           fontWeight: "bold",
         }}
       >
-        🏥 Hospitals Loaded: {allHospitals.length}
+        🏥 Facilities Loaded: {allFacilities.length}
       </div>
 
-      <MapContainer center={[48.21, 16.37]} zoom={12} style={{ height: "100%", width: "100%" }}>
+      {/* ✅ Map */}
+      <MapContainer
+        center={[48.21, 16.37]}
+        zoom={12}
+        style={{ height: "100%", width: "100%" }}
+      >
         <LayersControl position="topright">
           <BaseLayer checked name="OpenStreetMap">
             <TileLayer
@@ -130,51 +175,59 @@ export default function App() {
 
         <LocationClick onClick={handleMapClick} />
 
-        {/* Hospitals */}
-        {allHospitals.map((h, i) => {
-          const isNearest = nearestHospitals.some((n) => n.name === h.name);
-          const icon = isNearest ? nearestIcon : hospitalIcon;
+        {/* ✅ Facilities Markers */}
+        {allFacilities.map((f, i) => {
+          const isNearest = nearestFacilities.some((n) => n.id === f.id);
+          const type = f.facility_type?.toLowerCase() || "default";
+          const icon = isNearest ? iconMap["nearest"] : iconMap[type] || iconMap["default"];
 
           return (
-            <Marker key={i} position={[h.lat, h.lon]} icon={icon}>
+            <Marker key={i} position={[f.lat, f.lon]} icon={icon}>
               <Popup>
                 <div style={{ minWidth: "220px" }}>
                   <b style={{ fontSize: "16px", color: isNearest ? "blue" : "black" }}>
-                    {h.name}
+                    {f.name}
                   </b>
                   <br />
-                  📍 {h.address || "No address"} {h.postcode ? `(${h.postcode})` : ""}
+                  📍 {f.address || "No address"} {f.postcode ? `(${f.postcode})` : ""}
                   <br />
-                  🏙️ {h.city || "Unknown City"}
+                  🏙️ {f.city || "Unknown City"}
                   <br />
-                  🏥 Operator: {h.operator || "N/A"}
+                  🏥 Type: {f.facility_type || "N/A"}
                   <br />
-                  🚑 Emergency: {h.emergency === "yes" ? "✅ Yes" : h.emergency === "no" ? "❌ No" : "Unknown"}
+                  🏥 Operator: {f.operator || "N/A"}
                   <br />
-                  👥 Capacity: {h.capacity ? `${h.capacity} beds` : "N/A"}
+                  🚑 Emergency:{" "}
+                  {f.emergency === "yes"
+                    ? "✅ Yes"
+                    : f.emergency === "no"
+                    ? "❌ No"
+                    : "Unknown"}
                   <br />
-                  ☎️ {h.phone || "N/A"}
+                  👥 Capacity: {f.capacity ? `${f.capacity} beds` : "N/A"}
+                  <br />
+                  ☎️ {f.phone || "N/A"}
                   <br />
                   🌐{" "}
-                  {h.website ? (
-                    <a href={h.website} target="_blank" rel="noreferrer">
+                  {f.website ? (
+                    <a href={f.website} target="_blank" rel="noreferrer">
                       Visit Website
                     </a>
                   ) : (
                     "N/A"
                   )}
                   <br />
-                  Lat: {h.lat.toFixed(4)}, Lon: {h.lon.toFixed(4)}
-                  {h.distance_m && (
+                  Lat: {f.lat.toFixed(4)}, Lon: {f.lon.toFixed(4)}
+                  {f.distance_m && (
                     <>
-                      <br />🚑 Distance: {(h.distance_m / 1000).toFixed(2)} km
+                      <br />🚑 Distance: {(f.distance_m / 1000).toFixed(2)} km
                     </>
                   )}
                   <hr />
                   <button
                     onClick={() =>
                       window.open(
-                        `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lon}`,
+                        `https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lon}`,
                         "_blank"
                       )
                     }
@@ -196,7 +249,7 @@ export default function App() {
           );
         })}
 
-        {/* Circle */}
+        {/* ✅ Circle */}
         {circleCenter && (
           <Circle
             center={circleCenter}
@@ -206,7 +259,7 @@ export default function App() {
         )}
       </MapContainer>
 
-      {/* Distance slider */}
+      {/* ✅ Distance Slider */}
       <div
         style={{
           position: "absolute",
@@ -235,25 +288,28 @@ export default function App() {
         </button>
       </div>
 
-      {/* Legend */}
+      {/* ✅ Static Legend */}
       <div
         style={{
           position: "absolute",
           bottom: 10,
           left: 10,
+          zIndex: 2000,
           background: "white",
-          padding: "6px",
+          padding: "8px 12px",
           borderRadius: 6,
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
           fontSize: "14px",
         }}
       >
-        <div>
-          <img src="/icons/hospital.png" width={18} /> Hospital
-        </div>
-        <div>
-          <img src="/icons/hospital-blue.png" width={18} /> Nearest Hospital
-        </div>
+        <div><img src="/icons/hospital.png" width={18} style={{ marginRight: 6 }} /> Hospital</div>
+        <div><img src="/icons/pharmacy.png" width={18} style={{ marginRight: 6 }} /> Pharmacy</div>
+        <div><img src="/icons/clinic.png" width={18} style={{ marginRight: 6 }} /> Clinic</div>
+        <div><img src="/icons/doctor.png" width={18} style={{ marginRight: 6 }} /> Doctor</div>
+        <div><img src="/icons/dentist.png" width={18} style={{ marginRight: 6 }} /> Dentist</div>
+        <div><img src="/icons/laboratory.png" width={18} style={{ marginRight: 6 }} /> Laboratory</div>
+        <div><img src="/icons/facility.png" width={18} style={{ marginRight: 6 }} /> Other Facility</div>
+        <div><img src="/icons/hospital-blue.png" width={18} style={{ marginRight: 6 }} /> Nearest Selection</div>
       </div>
     </div>
   );

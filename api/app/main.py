@@ -7,7 +7,6 @@ import ssl
 from dotenv import load_dotenv
 from typing import Optional
 
-
 # 🔹 Load .env file
 load_dotenv()
 
@@ -24,7 +23,6 @@ pool: Optional[asyncpg.Pool] = None
 ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
-# (Alternative: use Supabase CA cert if you want stricter validation)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,7 +50,7 @@ app = FastAPI(title="CityAccess API", lifespan=lifespan)
 # ✅ CORS (React frontend at :5173)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:5173"]
+    allow_origins=["*"],  # better: ["http://localhost:5173"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,8 +64,13 @@ def root():
 async def health():
     return {"ok": True}
 
+# ========================================================
+# 🏥 HOSPITALS ENDPOINTS
+# ========================================================
+
 @app.get("/hospitals")
 async def get_all_hospitals():
+    """Fetch all hospitals from `hospitals` table"""
     try:
         assert pool is not None
         async with pool.acquire() as conn:
@@ -84,6 +87,7 @@ async def get_all_hospitals():
 
 @app.get("/hospitals/nearest")
 async def nearest_hospitals(lon: float, lat: float, dist: int = 2000):
+    """Find nearest hospitals"""
     try:
         assert pool is not None
         async with pool.acquire() as conn:
@@ -107,3 +111,79 @@ async def nearest_hospitals(lon: float, lat: float, dist: int = 2000):
         return [dict(r) for r in rows]
     except Exception as e:
         raise HTTPException(500, f"Error fetching nearest hospitals: {e}")
+
+# ========================================================
+# 🏥 HEALTH FACILITIES ENDPOINTS
+# ========================================================
+
+@app.get("/facilities")
+async def get_facilities():
+    """Fetch all facilities from `health_facilities` table"""
+    try:
+        assert pool is not None
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT id, name, facility_type, address, city, postcode,
+                       phone, website, operator, emergency, capacity,
+                       ST_X(geom) AS lon, ST_Y(geom) AS lat
+                FROM health_facilities
+                ORDER BY name;
+            """)
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching facilities: {e}")
+
+@app.get("/facilities/nearest")
+async def nearest_facilities(
+    lon: float,
+    lat: float,
+    dist: int = 2000,
+    facility_type: str = None  # optional filter
+):
+    """Find nearest facilities (optionally filter by facility_type)"""
+    try:
+        assert pool is not None
+        async with pool.acquire() as conn:
+            if facility_type:
+                query = """
+                    SELECT id, name, facility_type, address, city, postcode,
+                           phone, website, operator, emergency, capacity,
+                           ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                           ST_Distance(
+                             geom::geography,
+                             ST_SetSRID(ST_Point($1,$2),4326)::geography
+                           ) AS distance_m
+                    FROM health_facilities
+                    WHERE facility_type = $4
+                      AND ST_DWithin(
+                          geom::geography,
+                          ST_SetSRID(ST_Point($1,$2),4326)::geography,
+                          $3
+                      )
+                    ORDER BY distance_m
+                    LIMIT 20;
+                """
+                rows = await conn.fetch(query, lon, lat, dist, facility_type)
+            else:
+                query = """
+                    SELECT id, name, facility_type, address, city, postcode,
+                           phone, website, operator, emergency, capacity,
+                           ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                           ST_Distance(
+                             geom::geography,
+                             ST_SetSRID(ST_Point($1,$2),4326)::geography
+                           ) AS distance_m
+                    FROM health_facilities
+                    WHERE ST_DWithin(
+                          geom::geography,
+                          ST_SetSRID(ST_Point($1,$2),4326)::geography,
+                          $3
+                      )
+                    ORDER BY distance_m
+                    LIMIT 20;
+                """
+                rows = await conn.fetch(query, lon, lat, dist)
+
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching nearest facilities: {e}")
