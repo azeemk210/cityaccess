@@ -11,6 +11,8 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
+import type { MarkerCluster } from "leaflet";
+
 
 const { BaseLayer } = LayersControl;
 
@@ -60,7 +62,7 @@ const facilityIcons: Record<string, L.Icon> = {
     popupAnchor: [0, -24],
   }),
   doctors: L.icon({
-    iconUrl: "/icons/doctor.png",
+    iconUrl: "/icons/doctors.png",
     iconSize: [24, 24],
     iconAnchor: [12, 24],
     popupAnchor: [0, -24],
@@ -169,7 +171,7 @@ export default function App() {
         {/* ✅ Clustered Facilities */}
         <MarkerClusterGroup
           chunkedLoading
-          iconCreateFunction={(cluster) =>
+          iconCreateFunction={(cluster: MarkerCluster) =>
             L.divIcon({
               html: `<div style="
                 background:#007bff;
@@ -289,7 +291,6 @@ export default function App() {
           borderRadius: 6,
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
           fontSize: "14px",
-          zIndex: 2000
         }}
       >
         <div>
@@ -302,7 +303,7 @@ export default function App() {
           <img src="/icons/pharmacy.png" width={18} /> Pharmacy
         </div>
         <div>
-          <img src="/icons/doctor.png" width={18} /> Doctor
+          <img src="/icons/doctors.png" width={18} /> Doctor
         </div>
         <div>
           <img src="/icons/dentist.png" width={18} /> Dentist
