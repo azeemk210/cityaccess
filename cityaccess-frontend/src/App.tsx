@@ -10,6 +10,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 
 const { BaseLayer } = LayersControl;
 
@@ -18,22 +19,36 @@ interface Facility {
   name: string;
   lon: number;
   lat: number;
-  facility_type?: string;
   address?: string;
   city?: string;
+  facility_type?: string;
+  capacity?: number;
+  distance_m?: number;
   postcode?: string;
   operator?: string;
   emergency?: string;
-  capacity?: number;
   phone?: string;
   website?: string;
-  distance_m?: number;
 }
 
-// 🔹 Icons for each facility type
-const iconMap: Record<string, L.Icon> = {
+// Default icon
+const defaultIcon = L.icon({
+  iconUrl: "/icons/hospital.png",
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -28],
+});
+
+// Icons per facility type
+const facilityIcons: Record<string, L.Icon> = {
   hospital: L.icon({
     iconUrl: "/icons/hospital.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
+  }),
+  clinic: L.icon({
+    iconUrl: "/icons/clinic.png",
     iconSize: [28, 28],
     iconAnchor: [14, 28],
     popupAnchor: [0, -28],
@@ -44,13 +59,7 @@ const iconMap: Record<string, L.Icon> = {
     iconAnchor: [12, 24],
     popupAnchor: [0, -24],
   }),
-  clinic: L.icon({
-    iconUrl: "/icons/clinic.png",
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
-    popupAnchor: [0, -24],
-  }),
-  doctor: L.icon({
+  doctors: L.icon({
     iconUrl: "/icons/doctor.png",
     iconSize: [24, 24],
     iconAnchor: [12, 24],
@@ -68,21 +77,8 @@ const iconMap: Record<string, L.Icon> = {
     iconAnchor: [12, 24],
     popupAnchor: [0, -24],
   }),
-  nearest: L.icon({
-    iconUrl: "/icons/hospital-blue.png",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  default: L.icon({
-    iconUrl: "/icons/facility.png",
-    iconSize: [22, 22],
-    iconAnchor: [11, 22],
-    popupAnchor: [0, -22],
-  }),
 };
 
-// 🔹 Handle map clicks
 function LocationClick({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   useMapEvents({
     click: (e) => onClick(e.latlng.lat, e.latlng.lng),
@@ -96,9 +92,9 @@ export default function App() {
   const [circleCenter, setCircleCenter] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(2000);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  // 👇 Pick API URL dynamically
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  // Fetch all facilities
   useEffect(() => {
     fetch(`${API_URL}/facilities`)
       .then((res) => res.json())
@@ -106,9 +102,9 @@ export default function App() {
       .catch((err) => console.error("Error fetching facilities:", err));
   }, [API_URL]);
 
-  // Handle nearest facility fetch
   const handleMapClick = async (lat: number, lng: number) => {
     setCircleCenter([lat, lng]);
+
     try {
       const res = await fetch(
         `${API_URL}/facilities/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
@@ -116,7 +112,7 @@ export default function App() {
       const data = await res.json();
       setNearestFacilities(data);
     } catch (err) {
-      console.error("Error fetching nearest facilities:", err);
+      console.error("Error fetching nearest:", err);
       setNearestFacilities([]);
     }
   };
@@ -128,7 +124,7 @@ export default function App() {
 
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
-      {/* ✅ Facility counter */}
+      {/* Facility counter (top-left) */}
       <div
         style={{
           position: "absolute",
@@ -146,12 +142,7 @@ export default function App() {
         🏥 Facilities Loaded: {allFacilities.length}
       </div>
 
-      {/* ✅ Map */}
-      <MapContainer
-        center={[48.21, 16.37]}
-        zoom={12}
-        style={{ height: "100%", width: "100%" }}
-      >
+      <MapContainer center={[48.21, 16.37]} zoom={12} style={{ height: "100%", width: "100%" }}>
         <LayersControl position="topright">
           <BaseLayer checked name="OpenStreetMap">
             <TileLayer
@@ -175,81 +166,80 @@ export default function App() {
 
         <LocationClick onClick={handleMapClick} />
 
-        {/* ✅ Facilities Markers */}
-        {allFacilities.map((f, i) => {
-          const isNearest = nearestFacilities.some((n) => n.id === f.id);
-          const type = f.facility_type?.toLowerCase() || "default";
-          const icon = isNearest ? iconMap["nearest"] : iconMap[type] || iconMap["default"];
+        {/* ✅ Clustered Facilities */}
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={(cluster) =>
+            L.divIcon({
+              html: `<div style="
+                background:#007bff;
+                color:white;
+                border-radius:50%;
+                width:40px;
+                height:40px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:14px;
+                font-weight:bold;
+              ">${cluster.getChildCount()}</div>`,
+              className: "custom-cluster",
+              iconSize: [40, 40],
+            })
+          }
+        >
+          {allFacilities.map((f, i) => {
+            const isNearest = nearestFacilities.some((n) => n.id === f.id);
+            const icon = facilityIcons[f.facility_type || ""] || defaultIcon;
 
-          return (
-            <Marker key={i} position={[f.lat, f.lon]} icon={icon}>
-              <Popup>
-                <div style={{ minWidth: "220px" }}>
-                  <b style={{ fontSize: "16px", color: isNearest ? "blue" : "black" }}>
-                    {f.name}
-                  </b>
-                  <br />
-                  📍 {f.address || "No address"} {f.postcode ? `(${f.postcode})` : ""}
-                  <br />
-                  🏙️ {f.city || "Unknown City"}
-                  <br />
-                  🏥 Type: {f.facility_type || "N/A"}
-                  <br />
-                  🏥 Operator: {f.operator || "N/A"}
-                  <br />
-                  🚑 Emergency:{" "}
-                  {f.emergency === "yes"
-                    ? "✅ Yes"
-                    : f.emergency === "no"
-                    ? "❌ No"
-                    : "Unknown"}
-                  <br />
-                  👥 Capacity: {f.capacity ? `${f.capacity} beds` : "N/A"}
-                  <br />
-                  ☎️ {f.phone || "N/A"}
-                  <br />
-                  🌐{" "}
-                  {f.website ? (
-                    <a href={f.website} target="_blank" rel="noreferrer">
-                      Visit Website
-                    </a>
-                  ) : (
-                    "N/A"
-                  )}
-                  <br />
-                  Lat: {f.lat.toFixed(4)}, Lon: {f.lon.toFixed(4)}
-                  {f.distance_m && (
-                    <>
-                      <br />🚑 Distance: {(f.distance_m / 1000).toFixed(2)} km
-                    </>
-                  )}
-                  <hr />
-                  <button
-                    onClick={() =>
-                      window.open(
-                        `https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lon}`,
-                        "_blank"
-                      )
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "6px",
-                      border: "none",
-                      borderRadius: "4px",
-                      background: "#007bff",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Open in Google Maps
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+            return (
+              <Marker key={i} position={[f.lat, f.lon]} icon={icon}>
+                <Popup>
+                  <div style={{ minWidth: "220px" }}>
+                    <b style={{ fontSize: "16px", color: isNearest ? "blue" : "black" }}>
+                      {f.name}
+                    </b>
+                    <br />
+                    📍 {f.address || "No address"} {f.postcode ? `(${f.postcode})` : ""}
+                    <br />
+                    🏙️ {f.city || "Unknown City"}
+                    <br />
+                    🏥 Type: {f.facility_type || "N/A"}
+                    <br />
+                    🚑 Emergency:{" "}
+                    {f.emergency === "yes"
+                      ? "✅ Yes"
+                      : f.emergency === "no"
+                      ? "❌ No"
+                      : "Unknown"}
+                    <br />
+                    👥 Capacity: {f.capacity ? `${f.capacity} beds` : "N/A"}
+                    <br />
+                    ☎️ {f.phone || "N/A"}
+                    <br />
+                    🌐{" "}
+                    {f.website ? (
+                      <a href={f.website} target="_blank" rel="noreferrer">
+                        Visit Website
+                      </a>
+                    ) : (
+                      "N/A"
+                    )}
+                    <br />
+                    Lat: {f.lat.toFixed(4)}, Lon: {f.lon.toFixed(4)}
+                    {f.distance_m && (
+                      <>
+                        <br />🚑 Distance: {(f.distance_m / 1000).toFixed(2)} km
+                      </>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
 
-        {/* ✅ Circle */}
+        {/* Circle (for nearest facilities) */}
         {circleCenter && (
           <Circle
             center={circleCenter}
@@ -259,7 +249,7 @@ export default function App() {
         )}
       </MapContainer>
 
-      {/* ✅ Distance Slider */}
+      {/* Distance slider */}
       <div
         style={{
           position: "absolute",
@@ -288,28 +278,38 @@ export default function App() {
         </button>
       </div>
 
-      {/* ✅ Static Legend */}
+      {/* Legend (static bottom-left) */}
       <div
         style={{
           position: "absolute",
           bottom: 10,
           left: 10,
-          zIndex: 2000,
           background: "white",
-          padding: "8px 12px",
+          padding: "6px",
           borderRadius: 6,
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
           fontSize: "14px",
+          zIndex: 2000
         }}
       >
-        <div><img src="/icons/hospital.png" width={18} style={{ marginRight: 6 }} /> Hospital</div>
-        <div><img src="/icons/pharmacy.png" width={18} style={{ marginRight: 6 }} /> Pharmacy</div>
-        <div><img src="/icons/clinic.png" width={18} style={{ marginRight: 6 }} /> Clinic</div>
-        <div><img src="/icons/doctor.png" width={18} style={{ marginRight: 6 }} /> Doctor</div>
-        <div><img src="/icons/dentist.png" width={18} style={{ marginRight: 6 }} /> Dentist</div>
-        <div><img src="/icons/laboratory.png" width={18} style={{ marginRight: 6 }} /> Laboratory</div>
-        <div><img src="/icons/facility.png" width={18} style={{ marginRight: 6 }} /> Other Facility</div>
-        <div><img src="/icons/hospital-blue.png" width={18} style={{ marginRight: 6 }} /> Nearest Selection</div>
+        <div>
+          <img src="/icons/hospital.png" width={18} /> Hospital
+        </div>
+        <div>
+          <img src="/icons/clinic.png" width={18} /> Clinic
+        </div>
+        <div>
+          <img src="/icons/pharmacy.png" width={18} /> Pharmacy
+        </div>
+        <div>
+          <img src="/icons/doctor.png" width={18} /> Doctor
+        </div>
+        <div>
+          <img src="/icons/dentist.png" width={18} /> Dentist
+        </div>
+        <div>
+          <img src="/icons/laboratory.png" width={18} /> Laboratory
+        </div>
       </div>
     </div>
   );
