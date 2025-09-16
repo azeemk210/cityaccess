@@ -58,5 +58,5 @@ API Docs → http://localhost:8000/docs
 
 ## 🌍 Deployment
 - Backend → [Render](https://render.com/)  
-- Frontend → [Vercel](https://vercel.com/)  
+- Frontend → [Render](https://render.com/)  
 - Database → [Supabase](https://supabase.com/)  
