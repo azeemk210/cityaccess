@@ -62,7 +62,7 @@ const facilityIcons: Record<string, L.Icon> = {
     popupAnchor: [0, -24],
   }),
   doctors: L.icon({
-    iconUrl: "/icons/doctors.png",
+    iconUrl: "/icons/doctor.png",
     iconSize: [24, 24],
     iconAnchor: [12, 24],
     popupAnchor: [0, -24],
@@ -304,7 +304,7 @@ export default function App() {
           <img src="/icons/pharmacy.png" width={18} /> Pharmacy
         </div>
         <div>
-          <img src="/icons/doctors.png" width={18} /> Doctor
+          <img src="/icons/doctor.png" width={18} /> Doctor
         </div>
         <div>
           <img src="/icons/dentist.png" width={18} /> Dentist
