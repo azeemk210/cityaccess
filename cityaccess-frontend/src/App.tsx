@@ -291,6 +291,7 @@ export default function App() {
           borderRadius: 6,
           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
           fontSize: "14px",
+          zIndex: 2000,  // 👈 keep legend always on top
         }}
       >
         <div>
