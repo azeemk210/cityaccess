@@ -4,14 +4,79 @@ import {
   TileLayer,
   Marker,
   Popup,
-  useMapEvents,
   Circle,
-  LayersControl,
+  useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 
-const { BaseLayer } = LayersControl;
+// Fix for Leaflet default marker icons
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => void })._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+// Custom hospital icon
+const hospitalIcon = L.divIcon({
+  html: `<div style="
+    background: red;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid white;
+  "></div>`,
+  className: "",
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+// Nearest hospital icon
+const nearestIcon = L.divIcon({
+  html: `<div style="
+    background: blue;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid yellow;
+  "></div>`,
+  className: "",
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
+// Cluster icon
+const createClusterCustomIcon = (cluster: any) => {
+  const count = cluster.getChildCount();
+  let color = "green";
+
+  if (count >= 10 && count < 50) color = "orange";
+  else if (count >= 50) color = "red";
+
+  return L.divIcon({
+    html: `<div style="
+      background: ${color};
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    ">${count}</div>`,
+    className: "",
+    iconSize: L.point(40, 40, true),
+  });
+};
 
 interface Hospital {
   name: string;
@@ -20,175 +85,146 @@ interface Hospital {
   distance_m?: number;
 }
 
-// Default hospital icon
-const hospitalIcon = L.icon({
-  iconUrl: "/icons/hospital.png",
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -28],
-});
-
-// Nearest hospital icon (blue)
-const nearestIcon = L.icon({
-  iconUrl: "/icons/hospital-blue.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-});
-
-// Handle clicks on the map
-function LocationClick({
-  onClick,
-}: {
-  onClick: (lat: number, lng: number) => void;
-}) {
-  useMapEvents({
-    click: (e) => onClick(e.latlng.lat, e.latlng.lng),
-  });
+function MapClickHandler({ onMapClick }: { onMapClick: (e: any) => void }) {
+  useMapEvents({ click: onMapClick });
   return null;
 }
 
 export default function MapComponent() {
-  const [allHospitals, setAllHospitals] = useState<Hospital[]>([]);
-  const [nearestHospitals, setNearestHospitals] = useState<Hospital[]>([]);
-  const [circleCenter, setCircleCenter] = useState<[number, number] | null>(
-    null
-  );
-  const [radius, setRadius] = useState(2000);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [search, setSearch] = useState("");
+  const [nearest, setNearest] = useState<Hospital[]>([]);
+  const [circle, setCircle] = useState<{ lat: number; lon: number; dist: number } | null>(null);
+  const [distance, setDistance] = useState(5000);
 
-  // Load all hospitals from backend
   useEffect(() => {
     fetch("http://localhost:8000/hospitals")
       .then((res) => res.json())
-      .then(setAllHospitals)
+      .then(setHospitals)
       .catch((err) => console.error("Error fetching hospitals:", err));
   }, []);
 
-  // When clicking on map → draw circle + fetch nearest
-  const handleMapClick = async (lat: number, lng: number) => {
-    setCircleCenter([lat, lng]);
-
-    try {
-      const res = await fetch(
-        `http://localhost:8000/hospitals/nearest?lon=${lng}&lat=${lat}&dist=${radius}`
-      );
-      const data = await res.json();
-      setNearestHospitals(data);
-    } catch (err) {
-      console.error("Error fetching nearest:", err);
-      setNearestHospitals([]);
-    }
+  const handleMapClick = (e: any) => {
+    const { lat, lng } = e.latlng;
+    fetch(`http://localhost:8000/hospitals/nearest?lon=${lng}&lat=${lat}&dist=${distance}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setNearest(data);
+        setCircle({ lat, lon: lng, dist: distance });
+      })
+      .catch((err) => console.error("Error fetching nearest:", err));
   };
 
-  const clearSelection = () => {
-    setCircleCenter(null);
-    setNearestHospitals([]);
-  };
+  // Apply search filter
+  const filteredHospitals = hospitals.filter((h) =>
+    h.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
-      {/* Controls */}
+    <div style={{ height: "100vh", width: "100%" }}>
+      {/* Control Panel */}
       <div
         style={{
           position: "absolute",
           top: 10,
-          left: 10,
+          right: 10,
           zIndex: 1000,
           background: "white",
-          padding: "10px",
-          borderRadius: 6,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          padding: 12,
+          borderRadius: 8,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          minWidth: "200px",
         }}
       >
-        <div>
-          Distance: {radius / 1000} km
+        <input
+          type="text"
+          placeholder="Search hospitals..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            marginBottom: "8px",
+            width: "100%",
+            padding: "6px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+        />
+        <div style={{ marginBottom: "8px" }}>
+          Distance: {distance / 1000} km
           <input
             type="range"
             min={1000}
             max={20000}
             step={1000}
-            value={radius}
-            onChange={(e) => setRadius(Number(e.target.value))}
+            value={distance}
+            onChange={(e) => setDistance(Number(e.target.value))}
+            style={{ width: "100%" }}
           />
         </div>
-        <button onClick={clearSelection} style={{ marginTop: "5px" }}>
-          Clear Nearest
+        <button
+          onClick={() => {
+            setNearest([]);
+            setCircle(null);
+          }}
+          style={{
+            width: "100%",
+            padding: "6px",
+            background: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Clear Nearest ({nearest.length} selected)
         </button>
-      </div>
-
-      {/* Legend */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 10,
-          left: 10,
-          background: "white",
-          padding: "6px",
-          borderRadius: 6,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          fontSize: "14px",
-        }}
-      >
-        <div>
-          <img src="/icons/hospital.png" width={18} /> Hospital
-        </div>
-        <div>
-          <img src="/icons/hospital-blue.png" width={18} /> Nearest Hospital
+        <div style={{ marginTop: 10, fontSize: "12px" }}>
+          <b>Legend:</b>
+          <div>🟢 Small (&lt;10)</div>
+          <div>🟠 Medium (10–50)</div>
+          <div>🔴 Large (&gt;50)</div>
+          <div style={{ marginTop: 5 }}>🔵 Nearest hospital</div>
+          <div>🔴 Regular hospital</div>
         </div>
       </div>
 
       {/* Map */}
-      <MapContainer
-        center={[48.21, 16.37]}
-        zoom={12}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <LayersControl position="topright">
-          <BaseLayer checked name="OpenStreetMap">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-          </BaseLayer>
-          <BaseLayer name="Carto Light">
-            <TileLayer
-              url="https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}{r}.png"
-              attribution="&copy; OpenStreetMap, © Carto"
-            />
-          </BaseLayer>
-          <BaseLayer name="Satellite (ESRI)">
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              attribution="Tiles © Esri"
-            />
-          </BaseLayer>
-        </LayersControl>
+      <MapContainer center={[47.5162, 14.55]} zoom={7} style={{ height: "100%", width: "100%" }}>
+        <MapClickHandler onMapClick={handleMapClick} />
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        />
 
-        <LocationClick onClick={handleMapClick} />
+        {/* Clustered Hospitals */}
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={createClusterCustomIcon}
+        >
+          {filteredHospitals.map((h, i) => {
+            const isNearest = nearest.some((n) => n.name === h.name);
+            return (
+              <Marker
+                key={i}
+                position={[h.lat, h.lon]}
+                icon={isNearest ? nearestIcon : hospitalIcon}
+              >
+                <Popup>
+                  <b>{h.name}</b>
+                  {isNearest && h.distance_m && (
+                    <div>Distance: {(h.distance_m / 1000).toFixed(2)} km</div>
+                  )}
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
 
-        {/* All hospitals (with nearest styled differently) */}
-        {allHospitals.map((h, i) => {
-          const isNearest = nearestHospitals.some((n) => n.name === h.name);
-          const icon = isNearest ? nearestIcon : hospitalIcon;
-
-          return (
-            <Marker key={i} position={[h.lat, h.lon]} icon={icon}>
-              <Popup>
-                <b>{h.name}</b>
-                <br />({h.lat.toFixed(3)}, {h.lon.toFixed(3)})
-                {isNearest && h.distance_m && (
-                  <div>Distance: {h.distance_m.toFixed(0)} m</div>
-                )}
-              </Popup>
-            </Marker>
-          );
-        })}
-
-        {/* Circle (always when clicked) */}
-        {circleCenter && (
+        {/* Circle */}
+        {circle && (
           <Circle
-            center={circleCenter}
-            radius={radius}
+            center={[circle.lat, circle.lon]}
+            radius={circle.dist}
             pathOptions={{ color: "blue", fillOpacity: 0.1 }}
           />
         )}
